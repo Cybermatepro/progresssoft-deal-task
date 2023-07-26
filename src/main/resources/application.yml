@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: data-cluster-service
+  jpa:
+    show-sql: true
+    hibernate.ddl-auto: update
+    properties:
+      hibernate.temp.use_jdbc_metadata_defaults: true
+      hibernate:
+        format_sql: true
+  datasource:
+    url: ${DB_SERVER:jdbc:postgresql://localhost:6432/progresssoft_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    com.data.warehouse: DEBUG
+
+management:
+  endpoints:
+    web:
+      base-path: /management
+      exposure:
+        include: ['configprops', 'env', 'health', 'info', 'loggers']
