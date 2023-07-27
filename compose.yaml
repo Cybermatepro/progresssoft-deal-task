@@ -12,7 +12,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=progresssoft_db
   progresssoft:
-    image: vinlyreeks/progresssoft:1.0.1
+    image: vinlyreeks/progresssoft:1.0.0
     depends_on:
       - postgres-compose
     networks:

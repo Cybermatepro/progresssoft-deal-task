@@ -2,10 +2,8 @@ package com.enwerevincent.progresssofttask.controller;
 
 import com.enwerevincent.progresssofttask.ProgresssofttaskApplication;
 import com.enwerevincent.progresssofttask.dto.DealRequest;
-import com.enwerevincent.progresssofttask.exception.AppCustomException;
 import com.enwerevincent.progresssofttask.model.Deal;
 import com.enwerevincent.progresssofttask.repository.DealRepository;
-import com.enwerevincent.progresssofttask.response.ApiResponse;
 import com.enwerevincent.progresssofttask.service.DealServiceImpl;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,23 +16,18 @@ import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.validation.ValidationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Currency;
-import java.util.Optional;
-
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.RequestEntity.post;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,21 +35,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 
-@SpringBootTest(classes = { ProgresssofttaskApplication.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { ProgresssofttaskApplication.class })
 @AutoConfigureMockMvc
 class DealControllerTest {
 
-    @LocalServerPort
-    private int port;
     @Autowired
     DealRepository dealRepository;
-
-    public static final ParameterizedTypeReference<ResponseEntity<ApiResponse<DealRequest>>> PARAMETERIZED_RESPONSE_TYPE = new ParameterizedTypeReference<>() {
-
-    };
-
-    @Autowired
-    private RestTemplate restTemplate;
 
     @InjectMocks
     private DealServiceImpl dealService;
@@ -70,7 +54,6 @@ class DealControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final  String URL = "http://localhost:8080";
     private final Currency ORDERING_CURRENCY = Currency.getInstance("NGN");
     private final Currency CONVERTING_CURRENCY = Currency.getInstance("USD");
     private final BigDecimal AMOUNT = BigDecimal.valueOf(8000);
@@ -105,24 +88,33 @@ class DealControllerTest {
 
 
     @Test
-    public void createDealTest_Success() throws IOException {
+    public void createDealTest_Success() throws Exception {
         int dealSizeBeforeCreate = dealRepository.findAll().size();
-        var responseEntity =
-                restTemplate.postForEntity(URL + "/api/v1/deal", deal.buildDealRequest(), String.class);
-        assertEquals(201, responseEntity.getStatusCodeValue());
+        DealRequest dealRequest = deal.buildDealRequest();
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.post("/api/v1/deal")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(dealRequest));
+        MvcResult mvcResult =  mockMvc.perform(requestBuilder).andReturn();
+
+        assertEquals(201, mvcResult.getResponse().getStatus());
         int dealSizeAfterCreate = dealRepository.findAll().size();
-        assertTrue(dealSizeBeforeCreate < dealSizeAfterCreate);
+        assertNotEquals(dealSizeBeforeCreate , dealSizeAfterCreate);
     }
 
 
-    public void createDealTest_CurrencyValidation(){
+    @Test
+    public void createDealTest_CurrencyValidation() throws Exception {
         int dealSizeBeforeCreate = dealRepository.findAll().size();
-
         DealRequest dealRequest = deal.buildDealRequest();
         dealRequest.setOrderingCurrency("USK");
-        var responseEntity =
-                restTemplate.postForEntity(URL + "/api/v1/deal", dealRequest, String.class);
-        assertEquals(500, responseEntity.getStatusCodeValue());
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.post("/api/v1/deal")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(dealRequest));
+        MvcResult mvcResult =  mockMvc.perform(requestBuilder).andReturn();
+
+        assertEquals(500, mvcResult.getResponse().getStatus());
         int dealSizeAfterCreate = dealRepository.findAll().size();
         assertEquals(dealSizeBeforeCreate , dealSizeAfterCreate);
     }
