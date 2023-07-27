@@ -67,7 +67,7 @@ mvn clean install
 ```
 OR
 ```
-./mvn clean install -DskipTests
+./mvn clean install 
 ```
 
 
